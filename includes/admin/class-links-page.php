@@ -62,6 +62,7 @@ class WPSL_Links_Page {
                 'reloading' => __('Finished. Reloading the page…', 'shorty-link-manager'),
                 'waitingReload' => __('Rate limit reached. Reloading the page with the latest results…', 'shorty-link-manager'),
                 'buttonIdle' => __('Start automatic batch processing', 'shorty-link-manager'),
+                /* translators: 1: provider name, 2: remaining API calls in the current minute. */
                 'rateInfo' => __('Current provider: %1$s | Remaining calls in this minute: %2$d', 'shorty-link-manager'),
                 'providerName' => $provider ? $provider->get_name() : '',
                 'error' => __('An unexpected error occurred during processing.', 'shorty-link-manager'),
@@ -75,6 +76,7 @@ class WPSL_Links_Page {
 
         $result = $this->scanner->scan_posts();
         $message = sprintf(
+            /* translators: 1: number of posts/pages scanned, 2: number of external link occurrences found, 3: number of unique links stored. */
             __('Scan completed. %1$d posts/pages scanned, %2$d external link occurrences found, %3$d unique links stored.', 'shorty-link-manager'),
             (int) $result['posts_scanned'],
             (int) $result['occurrences_found'],
@@ -119,6 +121,7 @@ class WPSL_Links_Page {
         $result = $this->processor->process_pending_batch($provider);
         $type = $result['errors'] > 0 && $result['success'] === 0 ? 'error' : 'success';
         $message = sprintf(
+            /* translators: 1: processed links count, 2: successful links count, 3: error count, 4: remaining pending links count, 5: batch result message. */
             __('Processed: %1$d, successful: %2$d, errors: %3$d, remaining pending: %4$d. %5$s', 'shorty-link-manager'),
             (int) $result['processed'],
             (int) $result['success'],
@@ -171,9 +174,13 @@ class WPSL_Links_Page {
         }
 
         $status_filter = isset($_GET['status']) ? sanitize_key(wp_unslash($_GET['status'])) : 'all';
+        $wpsl_notice   = isset($_GET['wpsl_notice']) ? sanitize_key(wp_unslash($_GET['wpsl_notice'])) : '';
+        $message       = isset($_GET['message']) ? sanitize_text_field(wp_unslash($_GET['message'])) : '';
+
         if ('errors' === $status_filter) {
             $status_filter = 'error';
         }
+
         $links = $this->repository->get_links_by_status($status_filter);
         uasort($links, function ($a, $b) {
             return strcmp($b['updated_at'], $a['updated_at']);
@@ -187,24 +194,45 @@ class WPSL_Links_Page {
             <h1><?php esc_html_e('Shorty Link Manager → Links', 'shorty-link-manager'); ?></h1>
             <p><?php esc_html_e('Scan older posts and pages for outgoing links, shorten them in safe batches and write the short URLs back into the matching posts.', 'shorty-link-manager'); ?></p>
 
-            <?php if (isset($_GET['wpsl_notice'])) : ?>
-                <div class="notice notice-<?php echo esc_attr($_GET['wpsl_notice'] === 'success' ? 'success' : 'error'); ?> is-dismissible">
-                    <p><?php echo esc_html(isset($_GET['message']) ? wp_unslash($_GET['message']) : ''); ?></p>
+            <?php if ($wpsl_notice) : ?>
+                <div class="notice notice-<?php echo esc_attr('success' === $wpsl_notice ? 'success' : 'error'); ?> is-dismissible">
+                    <p><?php echo esc_html($message); ?></p>
                 </div>
             <?php endif; ?>
 
             <div style="background:#fff;border:1px solid #ccd0d4;padding:16px;margin:16px 0;max-width:980px;">
                 <h2 style="margin-top:0;"><?php esc_html_e('Bulk processing', 'shorty-link-manager'); ?></h2>
                 <p><?php esc_html_e('The automatic runner continues batch by batch until all pending links are processed or the provider rate limit is reached.', 'shorty-link-manager'); ?></p>
-                <div id="wpsl-progress-wrap" data-progress="<?php echo esc_attr($progress['progress_percent']); ?>" style="position:relative;max-width:640px;height:24px;background:#f0f0f1;border-radius:4px;overflow:hidden;">
+                <div style="position:relative;height:24px;background:#f0f0f1;border:1px solid #c3c4c7;border-radius:4px;overflow:hidden;">
                     <div id="wpsl-progress-bar" style="height:24px;width:<?php echo esc_attr($progress['progress_percent']); ?>%;background:#2271b1;"></div>
                     <div id="wpsl-progress-label" style="position:absolute;left:10px;top:3px;color:#fff;font-weight:600;"><?php echo esc_html($progress['progress_percent']); ?>%</div>
                 </div>
                 <p id="wpsl-progress-summary" style="margin:12px 0 6px;">
-                    <?php echo esc_html(sprintf(__('Total: %1$d | Shortened: %2$d | Pending: %3$d | Errors: %4$d', 'shorty-link-manager'), (int) $progress['total'], (int) $progress['shortened'], (int) $progress['pending'], (int) $progress['error'])); ?>
+                    <?php
+                    echo esc_html(
+                        sprintf(
+                            /* translators: 1: total links, 2: shortened links, 3: pending links, 4: error links. */
+                            __('Total: %1$d | Shortened: %2$d | Pending: %3$d | Errors: %4$d', 'shorty-link-manager'),
+                            (int) $progress['total'],
+                            (int) $progress['shortened'],
+                            (int) $progress['pending'],
+                            (int) $progress['error']
+                        )
+                    );
+                    ?>
                 </p>
                 <p id="wpsl-progress-message" style="margin:6px 0 14px; color:#50575e;">
-                    <?php echo esc_html($progress['last_scan_at'] ? sprintf(__('Last scan: %s', 'shorty-link-manager'), $progress['last_scan_at']) : __('No scan has been run yet.', 'shorty-link-manager')); ?>
+                    <?php
+                    echo esc_html(
+                        $progress['last_scan_at']
+                            ? sprintf(
+                                /* translators: %s: last scan timestamp. */
+                                __('Last scan: %s', 'shorty-link-manager'),
+                                $progress['last_scan_at']
+                            )
+                            : __('No scan has been run yet.', 'shorty-link-manager')
+                    );
+                    ?>
                 </p>
                 <p>
                     <a class="button button-secondary" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=wpsl_scan_links'), 'wpsl_scan_links')); ?>"><?php esc_html_e('Scan links', 'shorty-link-manager'); ?></a>
@@ -212,17 +240,68 @@ class WPSL_Links_Page {
                     <a class="button" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=wpsl_process_pending_links'), 'wpsl_process_pending_links')); ?>"><?php esc_html_e('Process one safe batch', 'shorty-link-manager'); ?></a>
                 </p>
                 <?php if ($provider) : ?>
-                    <p><small id="wpsl-rate-limit-info"><?php echo esc_html(sprintf(__('Current provider: %1$s | Remaining calls in this minute: %2$d', 'shorty-link-manager'), $provider->get_name(), (int) $progress['rate_limit_remaining'])); ?></small></p>
+                    <p><small id="wpsl-rate-limit-info">
+                        <?php
+                        echo esc_html(
+                            sprintf(
+                                /* translators: 1: provider name, 2: remaining API calls in the current minute. */
+                                __('Current provider: %1$s | Remaining calls in this minute: %2$d', 'shorty-link-manager'),
+                                $provider->get_name(),
+                                (int) $progress['rate_limit_remaining']
+                            )
+                        );
+                        ?>
+                    </small></p>
                 <?php else : ?>
                     <p><small><?php esc_html_e('Configure a provider and API key in Settings before shortening links.', 'shorty-link-manager'); ?></small></p>
                 <?php endif; ?>
             </div>
 
             <p>
-                <a href="<?php echo esc_url(add_query_arg(array('page' => 'shorty-link-manager-links', 'status' => 'all'), admin_url('admin.php'))); ?>"><?php echo esc_html(sprintf(__('All (%d)', 'shorty-link-manager'), $counts['all'])); ?></a> |
-                <a href="<?php echo esc_url(add_query_arg(array('page' => 'shorty-link-manager-links', 'status' => 'pending'), admin_url('admin.php'))); ?>"><?php echo esc_html(sprintf(__('Pending (%d)', 'shorty-link-manager'), $counts['pending'])); ?></a> |
-                <a href="<?php echo esc_url(add_query_arg(array('page' => 'shorty-link-manager-links', 'status' => 'shortened'), admin_url('admin.php'))); ?>"><?php echo esc_html(sprintf(__('Shortened (%d)', 'shorty-link-manager'), $counts['shortened'])); ?></a> |
-                <a href="<?php echo esc_url(add_query_arg(array('page' => 'shorty-link-manager-links', 'status' => 'error'), admin_url('admin.php'))); ?>"><?php echo esc_html(sprintf(__('Errors (%d)', 'shorty-link-manager'), $counts['error'])); ?></a>
+                <a href="<?php echo esc_url(add_query_arg(array('page' => 'shorty-link-manager-links', 'status' => 'all'), admin_url('admin.php'))); ?>">
+                    <?php
+                    echo esc_html(
+                        sprintf(
+                            /* translators: %d: total number of links. */
+                            __('All (%d)', 'shorty-link-manager'),
+                            $counts['all']
+                        )
+                    );
+                    ?>
+                </a> |
+                <a href="<?php echo esc_url(add_query_arg(array('page' => 'shorty-link-manager-links', 'status' => 'pending'), admin_url('admin.php'))); ?>">
+                    <?php
+                    echo esc_html(
+                        sprintf(
+                            /* translators: %d: number of pending links. */
+                            __('Pending (%d)', 'shorty-link-manager'),
+                            $counts['pending']
+                        )
+                    );
+                    ?>
+                </a> |
+                <a href="<?php echo esc_url(add_query_arg(array('page' => 'shorty-link-manager-links', 'status' => 'shortened'), admin_url('admin.php'))); ?>">
+                    <?php
+                    echo esc_html(
+                        sprintf(
+                            /* translators: %d: number of shortened links. */
+                            __('Shortened (%d)', 'shorty-link-manager'),
+                            $counts['shortened']
+                        )
+                    );
+                    ?>
+                </a> |
+                <a href="<?php echo esc_url(add_query_arg(array('page' => 'shorty-link-manager-links', 'status' => 'error'), admin_url('admin.php'))); ?>">
+                    <?php
+                    echo esc_html(
+                        sprintf(
+                            /* translators: %d: number of links with errors. */
+                            __('Errors (%d)', 'shorty-link-manager'),
+                            $counts['error']
+                        )
+                    );
+                    ?>
+                </a>
             </p>
 
             <table class="widefat striped">
@@ -264,7 +343,17 @@ class WPSL_Links_Page {
                                     <?php if (!empty($occurrences[0])) : ?>
                                         <a href="<?php echo esc_url(get_edit_post_link($occurrences[0]['post_id'], 'url')); ?>"><?php echo esc_html($occurrences[0]['post_title']); ?></a>
                                         <?php if (count($occurrences) > 1) : ?>
-                                            <br><small><?php echo esc_html(sprintf(__('+ %d more', 'shorty-link-manager'), count($occurrences) - 1)); ?></small>
+                                            <br><small>
+                                                <?php
+                                                echo esc_html(
+                                                    sprintf(
+                                                        /* translators: %d: number of additional link occurrences. */
+                                                        __('+ %d more', 'shorty-link-manager'),
+                                                        count($occurrences) - 1
+                                                    )
+                                                );
+                                                ?>
+                                            </small>
                                         <?php endif; ?>
                                     <?php else : ?>
                                         —
