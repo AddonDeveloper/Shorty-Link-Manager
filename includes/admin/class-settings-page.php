@@ -52,14 +52,16 @@ class WPSL_Settings_Page {
 
         $options = get_option('wpsl_settings', array());
         $provider = wpsl_get_active_provider();
+        $wpsl_notice = isset($_GET['wpsl_notice']) ? sanitize_key(wp_unslash($_GET['wpsl_notice'])) : '';
+        $message     = isset($_GET['message']) ? sanitize_text_field(wp_unslash($_GET['message'])) : '';
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('Shorty Link Manager → Settings', 'shorty-link-manager'); ?></h1>
             <p><?php esc_html_e('Configure your short URL service and choose how outgoing links should be shortened.', 'shorty-link-manager'); ?></p>
 
-            <?php if (isset($_GET['wpsl_notice'])) : ?>
-                <div class="notice notice-<?php echo esc_attr($_GET['wpsl_notice'] === 'success' ? 'success' : 'error'); ?> is-dismissible">
-                    <p><?php echo esc_html(isset($_GET['message']) ? wp_unslash($_GET['message']) : ''); ?></p>
+            <?php if ($wpsl_notice) : ?>
+                <div class="notice notice-<?php echo esc_attr('success' === $wpsl_notice ? 'success' : 'error'); ?> is-dismissible">
+                    <p><?php echo esc_html($message); ?></p>
                 </div>
             <?php endif; ?>
 
