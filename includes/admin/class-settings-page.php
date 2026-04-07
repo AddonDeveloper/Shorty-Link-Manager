@@ -52,8 +52,11 @@ class WPSL_Settings_Page {
 
         $options = get_option('wpsl_settings', array());
         $provider = wpsl_get_active_provider();
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading sanitized admin notice query args for display only.
         $wpsl_notice = isset($_GET['wpsl_notice']) ? sanitize_key(wp_unslash($_GET['wpsl_notice'])) : '';
-        $message     = isset($_GET['message']) ? sanitize_text_field(wp_unslash($_GET['message'])) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading sanitized admin notice query args for display only.
+        $message = isset($_GET['message']) ? sanitize_text_field(wp_unslash($_GET['message'])) : '';
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('Shorty Link Manager → Settings', 'shorty-link-manager'); ?></h1>
