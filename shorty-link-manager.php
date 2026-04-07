@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Shorty Link Manager
- * Description: Find, manage, and shorten external links in WordPress with bulk scanning, safe batch processing, and Shurli.at support.
+ * Description: Find, manage, and shorten outgoing links in WordPress.
  * Version: 0.1
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -36,8 +36,3 @@ function wpsl_boot_plugin() {
     $plugin->init();
 }
 add_action('plugins_loaded', 'wpsl_boot_plugin');
-
-function wpsl_load_textdomain() {
-    load_plugin_textdomain('shorty-link-manager', false, dirname(plugin_basename(__FILE__)) . '/languages');
-}
-add_action('init', 'wpsl_load_textdomain');
