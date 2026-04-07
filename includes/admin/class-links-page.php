@@ -133,7 +133,6 @@ class WPSL_Links_Page {
         $this->redirect_notice($type, $message);
     }
 
-
     public function handle_restore_single_link() {
         $this->assert_access();
         $normalized_url = isset($_GET['link']) ? sanitize_text_field(wp_unslash($_GET['link'])) : '';
@@ -173,9 +172,12 @@ class WPSL_Links_Page {
             return;
         }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading sanitized list filter from the admin URL.
         $status_filter = isset($_GET['status']) ? sanitize_key(wp_unslash($_GET['status'])) : 'all';
-        $wpsl_notice   = isset($_GET['wpsl_notice']) ? sanitize_key(wp_unslash($_GET['wpsl_notice'])) : '';
-        $message       = isset($_GET['message']) ? sanitize_text_field(wp_unslash($_GET['message'])) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading sanitized admin notice query args for display only.
+        $wpsl_notice = isset($_GET['wpsl_notice']) ? sanitize_key(wp_unslash($_GET['wpsl_notice'])) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading sanitized admin notice query args for display only.
+        $message = isset($_GET['message']) ? sanitize_text_field(wp_unslash($_GET['message'])) : '';
 
         if ('errors' === $status_filter) {
             $status_filter = 'error';
